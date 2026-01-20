@@ -204,20 +204,129 @@ Confirma la eliminación de la cuenta.
 }
 ```
 
+## Formato del Correo Electrónico (Para el equipo de Backend)
+
+Cuando se recibe el `POST /user/delete-request`, el backend debe enviar un correo electrónico al usuario con un link para continuar el proceso.
+
+### URL del Link
+
+El link debe tener el siguiente formato:
+
+```
+https://delete-account.pistisgroup.co/user/delete-request?user_id=XXXXXX
+```
+
+**Ejemplo:**
+```
+https://delete-account.pistisgroup.co/user/delete-request?user_id=abc123def456
+```
+
+### Generación del `user_id`
+
+- Debe ser un identificador único generado por el backend
+- Puede ser un UUID, token JWT, o hash único
+- Debe permitir identificar la solicitud de eliminación en el backend
+- Se recomienda que expire después de 24-48 horas por seguridad
+
+### Plantilla de Correo Sugerida
+
+```
+Asunto: Confirma la eliminación de tu cuenta de Pistis
+
+---
+
+Hola,
+
+Recibimos una solicitud para eliminar tu cuenta de Pistis asociada a este correo electrónico.
+
+Si fuiste tú quien realizó esta solicitud, haz clic en el siguiente enlace para continuar con el proceso:
+
+[ENLACE DE CONFIRMACIÓN]
+https://delete-account.pistisgroup.co/user/delete-request?user_id=XXXXXX
+
+Este enlace expirará en 24 horas.
+
+Si no solicitaste eliminar tu cuenta, puedes ignorar este correo de forma segura.
+
+---
+Pistis Group S.A.S.
+```
+
+### Consideraciones de Seguridad
+
+- El `user_id` NO debe ser el ID real del usuario en la base de datos
+- Usar un token temporal que expire
+- Validar que el token corresponda al email original antes de mostrar información
+- El token debe ser de un solo uso (invalidar después de confirmar)
+
 ## Flujo de la Aplicación
 
+```
+┌─────────────────┐     POST /user/delete-request      ┌─────────────────┐
+│                 │ ──────────────────────────────────▶│                 │
+│    Frontend     │        { mail: "..." }             │     Backend     │
+│   (GitHub Pages)│                                    │                 │
+└─────────────────┘                                    └────────┬────────┘
+                                                                │
+                                                                │ Envía email con link:
+                                                                │ .../user/delete-request?user_id=xxx
+                                                                ▼
+                                                       ┌─────────────────┐
+                                                       │     Usuario     │
+                                                       │  (Email inbox)  │
+                                                       └────────┬────────┘
+                                                                │
+                                                                │ Click en link
+                                                                ▼
+┌─────────────────┐     GET ?user_id=xxx               ┌─────────────────┐
+│                 │ ──────────────────────────────────▶│                 │
+│    Frontend     │◀────────────────────────────────── │     Backend     │
+│ (Confirmación)  │      { description: "..." }        │                 │
+└────────┬────────┘                                    └─────────────────┘
+         │
+         │ Usuario confirma
+         ▼
+┌─────────────────┐  GET ?user_id=xxx&action=true      ┌─────────────────┐
+│                 │ ──────────────────────────────────▶│                 │
+│    Frontend     │◀────────────────────────────────── │     Backend     │
+│    (Éxito)      │      { message: "..." }            │ (Inicia delete) │
+└─────────────────┘                                    └─────────────────┘
+```
+
+### Resumen del Flujo
+
 1. **Usuario ingresa email** → POST /user/delete-request
-2. **Sistema envía correo** con link: `https://tudominio.com/user/delete-request?user_id=xxx`
-3. **Usuario hace clic en el link** → GET /user/delete-request?user_id=xxx → Muestra descripción
-4. **Usuario confirma** → GET /user/delete-request?user_id=xxx&action=true
-5. **Sistema muestra confirmación** de proceso iniciado
+2. **Backend envía correo** con link: `https://delete-account.pistisgroup.co/user/delete-request?user_id=xxx`
+3. **Usuario hace clic en el link** → Frontend carga y hace GET /user/delete-request?user_id=xxx
+4. **Frontend muestra descripción** de datos a eliminar
+5. **Usuario confirma** → GET /user/delete-request?user_id=xxx&action=true
+6. **Backend inicia eliminación** y responde con mensaje de confirmación
 
 ## URL Final
 
 Una vez desplegado, la URL será:
 ```
-https://[tu-org].github.io/pistis-delete-account/
+https://delete-account.pistisgroup.co/
 ```
+
+### Nota sobre Dominio Personalizado
+
+Si se usa un dominio personalizado (como `delete-account.pistisgroup.co`), el sitio se despliega en la raíz `/`. En ese caso, actualizar:
+
+1. **`vite.config.ts`**:
+   ```typescript
+   base: '/',
+   ```
+
+2. **`src/App.tsx`**:
+   ```typescript
+   <BrowserRouter basename="/">
+   ```
+
+3. **Rutas de imágenes en los componentes** (Layout, ConfirmDeletePage, SuccessPage):
+   ```typescript
+   src="/logo.png"  // en lugar de src="/pistis-delete-account/logo.png"
+   ```
 
 Esta URL debe configurarse en:
 - Google Play Console → Ficha de la app → Política de privacidad / Eliminación de datos

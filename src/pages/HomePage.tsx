@@ -31,8 +31,8 @@ export function HomePage() {
     setIsLoading(true);
 
     try {
-      const response = await requestAccountDeletion(email);
-      navigate('/check-email', { state: { email, debugLink: response.debug_link } });
+      await requestAccountDeletion(email);
+      navigate('/check-email', { state: { email } });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocurrió un error inesperado.');
     } finally {

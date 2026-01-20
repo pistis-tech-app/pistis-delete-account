@@ -1,13 +1,12 @@
 import type { DeleteRequestResponse, ConfirmDeleteResponse } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
+const API_URL = import.meta.env.VITE_API_URL;
 
-interface RequestDeletionResponse {
-  success: boolean;
-  debug_link?: string; // Solo para pruebas
+if (!API_URL) {
+  console.warn('VITE_API_URL no está configurada. Las llamadas a la API fallarán.');
 }
 
-export async function requestAccountDeletion(email: string): Promise<RequestDeletionResponse> {
+export async function requestAccountDeletion(email: string): Promise<void> {
   const response = await fetch(`${API_URL}/user/delete-request`, {
     method: 'POST',
     headers: {
@@ -19,8 +18,6 @@ export async function requestAccountDeletion(email: string): Promise<RequestDele
   if (!response.ok) {
     throw new Error('Error al enviar la solicitud. Por favor, intenta de nuevo.');
   }
-
-  return response.json();
 }
 
 export async function getDeleteRequestDetails(userId: string): Promise<DeleteRequestResponse> {

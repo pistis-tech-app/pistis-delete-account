@@ -4,7 +4,6 @@ import { Layout } from '../components/Layout';
 export function CheckEmailPage() {
   const location = useLocation();
   const email = location.state?.email || '';
-  const debugLink = location.state?.debugLink || '';
 
   return (
     <Layout>
@@ -46,21 +45,6 @@ export function CheckEmailPage() {
             Si no recibes el correo en unos minutos, revisa tu carpeta de spam o correo no deseado.
           </p>
         </div>
-
-        {/* Solo para pruebas - mostrar el link de debug */}
-        {debugLink && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
-            <p className="text-sm text-yellow-800 font-medium mb-2">
-              🔧 Modo de prueba - Link de verificación:
-            </p>
-            <a
-              href={debugLink}
-              className="text-sm text-blue-600 hover:text-blue-700 underline break-all"
-            >
-              {debugLink}
-            </a>
-          </div>
-        )}
 
         <Link
           to="/"
